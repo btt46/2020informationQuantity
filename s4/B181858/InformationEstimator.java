@@ -46,10 +46,19 @@ public class InformationEstimator implements InformationEstimatorInterface {
     @Override
     public void setTarget(byte[] target) {
         myTarget = target;
-        estimate_result = new double[myTarget.length];
-        for(int i = 0;i < myTarget.length;i++){
-          estimate_result[i] = -1;
+        //Store estimation
+        if(myTarget.length > 0 && mySpace != null){
+            estimate_result = new double[myTarget.length];
+            estimate_result[0] = iq(0,1);
+            for(int n = 1;n < myTarget.length;n++){
+                double result = iq(0,n+1);
+                for(int i = 0; i<n;i++){
+                if(result > estimate_result[i] +iq(i+1,n+1)) result = estimate_result[i]+iq(i+1,n+1);
+                }
+                estimate_result[n] = result;
+            }
         }
+                
     }
 
     @Override
@@ -58,30 +67,31 @@ public class InformationEstimator implements InformationEstimatorInterface {
         mySpace = space; myFrequencer.setSpace(space);
     }
 
-    // Calculating estimation
-    private double cal_estimation(int n){
-        if(n<0 || n>=myTarget.length) return -1;
-        if(estimate_result[n] >= 0) return  estimate_result[n];
-        if(n == 0 ) estimate_result[0] = iq(0,1);
-        else{
-          double result = iq(0,n+1);
-          for(int i = 0; i<n;i++){
-            if(result > cal_estimation(i)+iq(i+1,n+1)) result = cal_estimation(i)+iq(i+1,n+1);
-          }
-           estimate_result[n] = result;
-        }
-        return  estimate_result[n];
-      }
+    // // Calculating estimation
+    // private double cal_estimation(int n){
+    //     if(n<0 || n>=myTarget.length) return -1;
+    //     if(estimate_result[n] >= 0) return  estimate_result[n];
+    //     if(n == 0 ) estimate_result[0] = iq(0,1);
+    //     else{
+    //       double result = iq(0,n+1);
+    //       for(int i = 0; i<n;i++){
+    //         if(result > cal_estimation(i)+iq(i+1,n+1)) result = cal_estimation(i)+iq(i+1,n+1);
+    //       }
+    //        estimate_result[n] = result;
+    //     }
+    //     return  estimate_result[n];
+    //   }
+  
 
     @Override
     public double estimation(){
-        double result = Double.MAX_VALUE;
         //It returns 0.0 when the TARGET is not set or TARGET's length is zero;
-        if(myTarget.length == 0 || myTarget == null) return 0.0; 
+        if(myTarget == null || myTarget.length == 0 ) return 0.0; 
         //It returns Double.MAX_VALUE when the true value is infinite, or SPACE is not set.
-        if(mySpace == null || Double.isInfinite(cal_estimation(myTarget.length-1)))
-            return result ; 
-        return result = cal_estimation(myTarget.length-1);
+        if(mySpace == null || Double.isInfinite(estimate_result[myTarget.length-1]))
+            return Double.MAX_VALUE;
+        return estimate_result[myTarget.length-1];
+
         // boolean [] partition = new boolean[myTarget.length+1];
         // int np = 1<<(myTarget.length-1);
         // // System.out.println("np="+np+" length="+myTarget.length);
